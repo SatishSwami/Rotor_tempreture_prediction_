@@ -1,1 +1,1 @@
-# Rotor_tempreture_prediction_
+# Rotor_Tempreature_Predication

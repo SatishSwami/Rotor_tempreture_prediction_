@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Smart Prediction</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;600&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Poppins', sans-serif;
+      background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 40px;
+      color: #fff;
+    }
+
+    .card {
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 20px;
+      padding: 40px;
+      width: 100%;
+      max-width: 700px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+    }
+
+    h1 {
+      text-align: center;
+      font-weight: 600;
+      font-size: 2.5rem;
+      margin-bottom: 30px;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 20px;
+    }
+
+    .input-group {
+      display: flex;
+      flex-direction: column;
+    }
+
+    label {
+      font-size: 0.9em;
+      margin-bottom: 6px;
+      color: #ddd;
+    }
+
+    input {
+      padding: 14px;
+      border-radius: 10px;
+      border: 1px solid #ccc;
+      font-size: 16px;
+      background-color: #fff;
+      color: #333;
+      transition: all 0.2s ease;
+    }
+
+    input:focus {
+      outline: none;
+      border-color: #00c6ff;
+      box-shadow: 0 0 8px rgba(0, 198, 255, 0.3);
+    }
+
+    .btn {
+      margin-top: 30px;
+      width: 100%;
+      padding: 16px;
+      background: linear-gradient(to right, #00c6ff, #0072ff);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 18px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+
+    .btn:hover {
+      background: linear-gradient(to right, #0072ff, #00c6ff);
+    }
+
+    .result {
+      margin-top: 30px;
+      padding: 15px;
+      border-radius: 10px;
+      text-align: center;
+      font-size: 18px;
+    }
+
+    .success {
+      background-color: rgba(0, 200, 140, 0.15);
+      color: #00ffaa;
+      border: 1px solid #00ffaa;
+    }
+
+    .error {
+      background-color: rgba(255, 80, 80, 0.15);
+      color: #ff6666;
+      border: 1px solid #ff6666;
+    }
+
+    .spinner {
+      margin-top: 20px;
+      text-align: center;
+    }
+
+    .spinner div {
+      width: 24px;
+      height: 24px;
+      border: 4px solid #fff;
+      border-top: 4px solid #00c6ff;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>🔍 Predict PM Value</h1>
+    <form id="predictionForm">
+      <div class="form-grid">
+        <div class="input-group">
+          <label for="feature1">Profile ID</label>
+          <input type="number" id="feature1" step="any" required>
+        </div>
+        <div class="input-group">
+          <label for="feature2">Stator Yoke</label>
+          <input type="number" id="feature2" step="any" required>
+        </div>
+        <div class="input-group">
+          <label for="feature3">Motor Speed</label>
+          <input type="number" id="feature3" step="any" required>
+        </div>
+        <div class="input-group">
+          <label for="feature4">Stator Tooth</label>
+          <input type="number" id="feature4" step="any" required>
+        </div>
+        <div class="input-group">
+          <label for="feature5">Stator Winding</label>
+          <input type="number" id="feature5" step="any" required>
+        </div>
+        <div class="input-group">
+          <label for="feature6">Coolant</label>
+          <input type="number" id="feature6" step="any" required>
+        </div>
+      </div>
+      <button class="btn" type="submit">💡 Predict</button>
+    </form>
+
+    <div class="spinner" id="loading" style="display: none;">
+      <div></div>
+      <p style="margin-top: 10px;">Predicting...</p>
+    </div>
+
+    <div id="result"></div>
+  </div>
+
+  <script>
+    document.getElementById('predictionForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+
+      const btn = document.querySelector('.btn');
+      const loading = document.getElementById('loading');
+      const result = document.getElementById('result');
+      result.innerHTML = '';
+
+      const features = [];
+
+      for (let i = 1; i <= 6; i++) {
+        const input = document.getElementById(`feature${i}`);
+        const value = input.value.trim();
+
+        if (!value || isNaN(value)) {
+          result.innerHTML = `<div class="result error">All fields must be valid numbers.</div>`;
+          return;
+        }
+
+        features.push(parseFloat(value));
+      }
+
+      console.log("Sending features to backend:", features);
+
+      btn.disabled = true;
+      loading.style.display = 'block';
+
+      try {
+        const response = await fetch('/predict', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ features: features })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          result.innerHTML = `<div class="result success">Predicted PM Value: <strong>${data.predicted_pm}°C</strong></div>`;
+        } else {
+          result.innerHTML = `<div class="result error">${data.error}</div>`;
+        }
+
+      } catch (err) {
+        result.innerHTML = `<div class="result error">Network Error: ${err.message}</div>`;
+      } finally {
+        btn.disabled = false;
+        loading.style.display = 'none';
+      }
+    });
+  </script>
+</body>
+</html>
